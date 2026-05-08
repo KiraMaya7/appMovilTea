@@ -28,8 +28,10 @@ class AppState(val onBack: () -> Unit) {
     var currentScreen by mutableStateOf<Screen>(Screen.Welcome)
     var selectedCategoryId by mutableStateOf("")
     var selectedCategoryName by mutableStateOf("")
+    var userRole by mutableStateOf("tutor") // "tutor" o "infante"
 
-    fun navigateTo(screen: Screen) {
+    fun navigateTo(screen: Screen, role: String? = null) {
+        if (role != null) userRole = role
         when (screen) {
             is Screen.CategoryDetail -> {
                 selectedCategoryId = screen.categoryId
@@ -45,7 +47,7 @@ class AppState(val onBack: () -> Unit) {
             Screen.Welcome -> onBack()
             Screen.Pin -> currentScreen = Screen.Welcome
             Screen.TutorPanel -> currentScreen = Screen.Pin
-            is Screen.CategoryDetail -> currentScreen = Screen.TutorPanel
+            is Screen.CategoryDetail -> currentScreen = if (userRole == "tutor") Screen.TutorPanel else Screen.Welcome
             else -> {}
         }
     }
@@ -55,8 +57,12 @@ class AppState(val onBack: () -> Unit) {
 fun AppNavigation(appState: AppState) {
     when (appState.currentScreen) {
         Screen.Welcome -> WelcomeScreen(
-            onTutorClick = { appState.navigateTo(Screen.Pin) },
-            onNinoClick = { /* Navegar al panel del infante */ }
+            onTutorClick = { appState.navigateTo(Screen.Pin, role = "tutor") },
+            onNinoClick = { 
+                // Para el niño, podríamos ir directo a las categorías o a un panel simplificado
+                // Suponiendo que va al TutorPanel pero con rol "infante" para ver categorías
+                appState.navigateTo(Screen.TutorPanel, role = "infante") 
+            }
         )
         Screen.Pin -> PinScreen(
             onPinSuccess = { appState.navigateTo(Screen.TutorPanel) },
@@ -73,6 +79,7 @@ fun AppNavigation(appState: AppState) {
             CategoryDetailScreen(
                 categoryId = screen.categoryId,
                 categoryName = screen.categoryName,
+                userRole = appState.userRole,
                 onBack = { appState.goBack() }
             )
         }
